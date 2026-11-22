@@ -50,7 +50,7 @@ export function normalizarOperacao(base, v) {
   const s = semAcento(v).replace(/[\s_-]+/g, ' ');
   if (!s) return null;
   for (const [k, op] of Object.entries(base.ops)) {
-    if (s === k.replace(/_/g, ' ') || s === semAcento(op.nome)) return k;
+    if (s === k.replace(/_/g, ' ') || s === semAcento(op.nome).replace(/[\s_-]+/g, ' ') || (op.apelidos || []).some(a => semAcento(a).replace(/[\s_-]+/g, ' ') === s)) return k;
   }
   return undefined; // informada, mas não reconhecida
 }
@@ -183,7 +183,7 @@ export function analisar(base, entrada) {
   }
   if (opChave === undefined) add('semCobertura', 'operacao_desconhecida', `Operação "${r.entrada.operacaoRecebida}" não reconhecida.`, `Use uma destas: ${Object.values(base.ops).map(o => o.nome).join('; ')}.`, '');
   else if (!op) add('divergencia', 'operacao_ausente', 'Operação não informada.', 'Informe a operação na linha ou para o lote.', '');
-  else if (op.semCobertura) add('semCobertura', 'operacao_sem_cobertura', `A operação "${op.nome}" está fora da cobertura desta versão, que analisa vendas no mercado interno.`, 'Confirme o enquadramento dessa operação com o responsável fiscal.', '');
+  else if (op.semCobertura) add('semCobertura', 'operacao_sem_cobertura', `A operação "${op.nome}" está fora da cobertura desta versão, que analisa vendas dentro do país.`, 'Confirme o enquadramento dessa operação com o responsável fiscal.', '');
 
   const podeAnalisar = r.produto && data && data >= primeiroDia && op && !op.semCobertura;
   if (!podeAnalisar) return fechar(base, r);

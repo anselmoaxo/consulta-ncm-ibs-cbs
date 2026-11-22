@@ -122,7 +122,7 @@ footer p{margin:0 0 6px}
 .contexto label{display:block;font-size:13px;font-weight:600;color:#E4EBE5;margin-bottom:4px}
 .contexto input,.contexto select{min-height:40px;border-radius:8px;border:1px solid transparent;background:var(--sup);color:var(--texto);font:15px "Public Sans",sans-serif;padding:0 10px}
 .contexto>div{max-width:100%}.contexto select{max-width:100%}
-.contexto .ajuda{font-size:13px;color:#C7D3CB;max-width:40ch;margin:0;align-self:center}
+.contexto .ajuda{font-size:14px;color:#DCE5DE;max-width:46ch;margin:0;align-self:end;line-height:1.4}
 [hidden]{display:none!important}
 /* situação */
 .tag.s-divergencia{background:var(--erro-fundo);color:var(--erro);border-color:#E8B4B0}
@@ -217,8 +217,8 @@ footer p{margin:0 0 6px}
       </div>
       <div class="sug" id="sug" role="listbox" aria-label="Produtos encontrados"></div>
       <div class="contexto">
-        <div><label for="dt">Data da operação</label><input type="date" id="dt"></div>
-        <div><label for="op">Operação</label><select id="op"></select></div>
+        <div><label for="dt">Data de emissão da nota</label><input type="date" id="dt"></div>
+        <div><label for="op">Para quem você está vendendo?</label><select id="op" aria-describedby="opajuda"></select></div>
         <p class="ajuda" id="opajuda"></p>
       </div>
       <p class="exemplos" id="ex"><span>Exemplos:</span></p>

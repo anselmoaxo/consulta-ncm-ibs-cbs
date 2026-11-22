@@ -175,7 +175,7 @@ $('#f').addEventListener('submit', e => {
 $('#ex').addEventListener('click', e => { const b = e.target.closest('button[data-c]'); if (b) { st.cad = null; go(b.dataset.c); } });
 $('#dt').addEventListener('change', e => { st.data = e.target.value || hojeIso; renderConsulta(); });
 $('#op').addEventListener('change', e => { st.op = e.target.value; ajudaOp(); renderConsulta(); });
-function ajudaOp() { const o = B && B.ops[st.op]; $('#opajuda').textContent = o ? (o.semCobertura ? 'Fora da cobertura desta versão.' : o.ajuda || '') : ''; }
+function ajudaOp() { const o = B && B.ops[st.op]; $('#opajuda').textContent = o ? o.ajuda || '' : ''; }
 
 function copiar(texto, alvo, ok) {
   const fim = m => { alvo.textContent = m; };
@@ -200,7 +200,7 @@ $('#res').addEventListener('change', e => {
 const aud = {nome: '', demo: false, csv: null, mapa: null, lote: {data: hojeIso, operacao: 'venda'}, res: null, filtro: 'todos', aberto: new Set(), msg: ''};
 
 function opcoesOp(sel, vazio) {
-  return (vazio ? `<option value="">${vazio}</option>` : '') + Object.entries(B.ops).map(([k, o]) => `<option value="${k}" ${k === sel ? 'selected' : ''}>${esc(o.nome)}${o.semCobertura ? ' (sem cobertura)' : ''}</option>`).join('');
+  return (vazio ? `<option value="">${vazio}</option>` : '') + Object.entries(B.ops).map(([k, o]) => `<option value="${k}" ${k === sel ? 'selected' : ''}>${esc(o.nome)}${o.semCobertura ? ' (ainda não analisada)' : ''}</option>`).join('');
 }
 
 function renderAuditoria() {
@@ -223,9 +223,9 @@ function renderAuditoria() {
       <p class="nota">${aud.demo ? '<strong>Cadastro fictício de demonstração.</strong> ' : ''}Arquivo <span class="mono">${esc(aud.nome)}</span>: ${c.registros.length} linha${c.registros.length !== 1 ? 's' : ''} de dados, separador “${c.delimitador === ';' ? 'ponto e vírgula' : 'vírgula'}”.</p>
       <div class="mapa">${COLUNAS.map(([k, nome]) => `<div><label for="map-${k}">${nome}${k === 'ncm' ? ' (obrigatória)' : ''}</label><select id="map-${k}" data-map="${k}"><option value="-1">Não tem no arquivo</option>${c.cabecalho.map((h, i) => `<option value="${i}" ${aud.mapa[k] === i ? 'selected' : ''}>${esc(h || `Coluna ${i + 1}`)}</option>`).join('')}</select></div>`).join('')}</div>
       <h3 style="margin:8px 0 4px;font-size:15px">Para todo o lote</h3>
-      <p class="nota" style="margin:0 0 6px">Usados quando a linha não traz operação ou data.</p>
-      <div class="lote"><div><label for="lote-data">Data da operação</label><input type="date" id="lote-data" value="${aud.lote.data}"></div>
-        <div><label for="lote-op">Operação</label><select id="lote-op">${opcoesOp(aud.lote.operacao)}</select></div></div>
+      <p class="nota" style="margin:0 0 6px">Valem para as linhas do arquivo que não trazem o tipo de venda ou a data.</p>
+      <div class="lote"><div><label for="lote-data">Data de emissão da nota</label><input type="date" id="lote-data" value="${aud.lote.data}"></div>
+        <div><label for="lote-op">Para quem você está vendendo?</label><select id="lote-op" aria-describedby="lote-op-ajuda">${opcoesOp(aud.lote.operacao)}</select><p class="nota" id="lote-op-ajuda" style="margin:4px 0 0">${esc(B.ops[aud.lote.operacao]?.ajuda || '')}</p></div></div>
       <h3 style="margin:8px 0 6px;font-size:15px">Amostra do arquivo</h3>
       <div class="tabela"><table><thead><tr><th>Linha</th>${c.cabecalho.map(h => `<th>${esc(h)}</th>`).join('')}</tr></thead><tbody>
         ${c.registros.slice(0, 5).map(r => `<tr><td class="cod">${r.linha}</td>${c.cabecalho.map((_, i) => `<td class="cod">${esc(r.campos[i] ?? '')}</td>`).join('')}</tr>`).join('')}</tbody></table></div>
@@ -303,7 +303,7 @@ $('#aud').addEventListener('change', e => {
   }
   if (e.target.dataset.map) { aud.mapa[e.target.dataset.map] = +e.target.value; aud.res = null; renderAuditoria(); $(`#map-${e.target.dataset.map}`).focus(); }
   if (e.target.id === 'lote-data') { aud.lote.data = e.target.value; aud.res = null; }
-  if (e.target.id === 'lote-op') { aud.lote.operacao = e.target.value; aud.res = null; }
+  if (e.target.id === 'lote-op') { aud.lote.operacao = e.target.value; aud.res = null; $('#lote-op-ajuda').textContent = B.ops[aud.lote.operacao]?.ajuda || ''; }
 });
 $('#aud').addEventListener('click', e => {
   if (e.target.closest('#demo')) {
