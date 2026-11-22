@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Consulta NCM para IBS e CBS</title>
-<meta name="description" content="Consulte o enquadramento fiscal de um produto pelo NCM ou pela descrição: CST, cClassTrib, base legal da LC 214/2025, simulação do imposto e trecho do XML da NF-e.">
+<meta name="description" content="Consulte o enquadramento de IBS/CBS de um produto por NCM, operação e data, ou audite o cadastro do ERP por CSV antes do go-live. CST, cClassTrib, base legal, vigência e XML da NF-e.">
 <meta property="og:title" content="Consulta NCM para IBS e CBS">
 <meta property="og:description" content="CST, cClassTrib, base legal e XML da NF-e a partir do NCM. Tabelas oficiais da Receita e do Siscomex.">
 <meta property="og:type" content="website">
@@ -13,6 +13,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Courier+Prime:wght@400;700&family=Public+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
+
 /* Ficha fiscal: cabeçalho verde-floresta, ficha branca com uma divisória pontilhada
    entre a identificação do produto e a leitura fiscal. Public Sans no texto;
    Courier Prime só para códigos, valores alinhados e XML. Vermelho só para erro. */
@@ -112,13 +113,102 @@ footer p{margin:0 0 6px}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
 @media(max-width:820px){.paineis{grid-template-columns:minmax(0,1fr)}}
 @media(max-width:480px){.campo{flex-direction:column}.campo button{width:100%}.codigos{grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px 16px}.opcao{grid-template-columns:minmax(0,1fr)}.opcao .q,.opcao details{grid-column:1}}
+/* modos */
+.modos{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 16px}
+.modos a{display:inline-flex;align-items:center;min-height:44px;padding:0 18px;border-radius:8px;font-weight:700;text-decoration:none;color:#E9EFEA;border:1px solid #4D6B5E}
+.modos a:hover{background:var(--marca-2)}
+.modos a[aria-current=page]{background:var(--sup);color:var(--marca);border-color:var(--sup)}
+.contexto{display:flex;flex-wrap:wrap;gap:10px 16px;margin-top:12px;align-items:end}
+.contexto label{display:block;font-size:13px;font-weight:600;color:#E4EBE5;margin-bottom:4px}
+.contexto input,.contexto select{min-height:40px;border-radius:8px;border:1px solid transparent;background:var(--sup);color:var(--texto);font:15px "Public Sans",sans-serif;padding:0 10px}
+.contexto>div{max-width:100%}.contexto select{max-width:100%}
+.contexto .ajuda{font-size:13px;color:#C7D3CB;max-width:40ch;margin:0;align-self:center}
+[hidden]{display:none!important}
+/* situação */
+.tag.s-divergencia{background:var(--erro-fundo);color:var(--erro);border-color:#E8B4B0}
+.tag.s-confirmar{background:#FFF3D6;color:#7A4E00;border-color:#EBCB86}
+.tag.s-semCobertura{background:#E8EEF3;color:#344654;border-color:#C5D2DC}
+.tag.s-ok{background:var(--verde-tag);color:var(--verde-tinta);border-color:#C3D9C9}
+.achados{display:grid;gap:10px;margin:0;padding:0;list-style:none}
+.achado{border:1px solid var(--borda);border-left-width:4px;border-radius:8px;padding:10px 14px;background:var(--sup)}
+.achado.s-divergencia{border-left-color:var(--erro)}.achado.s-confirmar{border-left-color:#C98A00}.achado.s-semCobertura{border-left-color:#6B8496}.achado.s-ok{border-left-color:var(--verde-tinta)}
+.achado p{margin:0}
+.achado .acao{margin-top:4px}
+.achado .ref{margin-top:4px;font-size:13px;color:var(--apagado)}
+.perguntas{display:grid;gap:10px;margin-top:14px}
+.pergunta{border:1px solid #EBCB86;background:#FFFAEE;border-radius:8px;padding:12px 14px}
+.pergunta p{margin:0}
+.pergunta .porque{font-size:14px;color:var(--apagado);margin-top:2px}
+.pergunta .botoes{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap}
+.pergunta .botoes button{min-height:36px;padding:0 14px}
+.pergunta .botoes button[aria-pressed=true]{background:var(--marca);color:#fff;border-color:var(--marca)}
+.estado-e{display:inline-block;font-size:13px;font-weight:700;border-radius:999px;padding:1px 10px;margin-left:6px;border:1px solid var(--borda)}
+.estado-e.aplicavel{background:var(--verde-tag);color:var(--verde-tinta)}
+.estado-e.pendente{background:#FFF3D6;color:#7A4E00}
+.estado-e.excluido{background:var(--suave);color:var(--apagado)}
+.opcao.excluido{opacity:.75}
+.opcao .fonte{grid-column:2;font-size:13px;color:var(--apagado)}
+.pendentes{margin:8px 0 0;padding-left:18px;font-size:14px;color:var(--apagado)}
+.semregra{font-weight:700;font-size:18px;margin:0}
+/* auditoria */
+.passos{display:grid;gap:20px}
+.passo h2{margin:0 0 6px;font-size:20px}
+.passo .nota{margin:0 0 12px}
+.arquivo{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.arquivo input[type=file]{font:15px "Public Sans",sans-serif;max-width:100%}
+.botao-pri{background:var(--marca);color:#fff;border-color:var(--marca)}
+.botao-pri:hover{background:var(--marca-2)}
+.mapa{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px 16px;margin:12px 0}
+.mapa label,.lote label{display:block;font-size:13px;font-weight:600;color:var(--apagado);margin-bottom:4px}
+.mapa select,.lote select,.lote input{width:100%;min-height:40px;border:1px solid var(--borda-forte);border-radius:8px;background:var(--sup);color:var(--texto);font:15px "Public Sans",sans-serif;padding:0 8px}
+.lote{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px 16px;margin:4px 0 14px}
+.tabela{overflow-x:auto;border:1px solid var(--borda);border-radius:8px}
+.tabela table{font-size:14px}
+.tabela th,.tabela td{padding:7px 10px;white-space:nowrap}
+.tabela td.quebra{white-space:normal;min-width:18ch}
+.mono,.tabela td.cod{font-family:var(--mono)}
+.totais{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin:12px 0 16px}
+.total{display:grid;gap:2px;text-align:left;min-height:0;padding:12px 14px;border-radius:10px;border:1px solid var(--borda);border-left-width:4px;font-weight:400;background:var(--sup)}
+.total b{font:700 28px/1.1 var(--mono)}
+.total span{font-size:14px}
+.total.s-divergencia{border-left-color:var(--erro)}.total.s-confirmar{border-left-color:#C98A00}.total.s-semCobertura{border-left-color:#6B8496}.total.s-ok{border-left-color:var(--verde-tinta)}
+.total[aria-pressed=true]{box-shadow:inset 0 0 0 2px var(--marca);background:#F7FAF7}
+.filtros{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:10px}
+.filtros button{min-height:36px;padding:0 14px;border-radius:999px;font-size:14px}
+.filtros button[aria-pressed=true]{background:var(--marca);color:#fff;border-color:var(--marca)}
+.itens{display:grid;gap:8px}
+.item{border:1px solid var(--borda);border-radius:10px;background:var(--sup)}
+.item>button{display:grid;grid-template-columns:7ch minmax(0,1fr) auto;gap:4px 14px;width:100%;text-align:left;border:0;border-radius:10px;padding:10px 14px;min-height:0;font-weight:400;background:transparent;align-items:center}
+.item>button:hover{background:var(--suave)}
+.item .ln{font:700 14px var(--mono);color:var(--apagado)}
+.item .nm{overflow-wrap:anywhere}
+.item .nm small{display:block;color:var(--apagado);font-size:13px}
+.item .det{padding:4px 16px 16px;border-top:1px dashed var(--borda-forte)}
+.item .det dl{display:grid;grid-template-columns:max-content minmax(0,1fr);gap:4px 14px;margin:12px 0;font-size:14px}
+.item .det dt{color:var(--apagado);font-weight:600}
+.item .det dd{margin:0;overflow-wrap:anywhere}
+.exportar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:14px}
+@media(max-width:600px){.item>button{grid-template-columns:minmax(0,1fr)}.item .det dl{grid-template-columns:minmax(0,1fr)}}
+.tabct td{white-space:normal;vertical-align:top}
+.tabct td.cod{white-space:nowrap}
+.tabct .desc{min-width:28ch;max-width:60ch}
+.busca-tab{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:end;margin-bottom:12px}
+.busca-tab>*{max-width:100%}
+.busca-tab label{display:block;font-size:13px;font-weight:600;color:var(--apagado);margin-bottom:4px}
+.busca-tab input,.busca-tab select{min-height:40px;border:1px solid var(--borda-forte);border-radius:8px;background:var(--sup);color:var(--texto);font:15px "Public Sans",sans-serif;padding:0 10px;max-width:100%}
+.busca-tab input[type=search]{width:22em}
 </style>
 </head>
 <body>
 <header class="topo">
   <div class="wrap">
+    <nav class="modos" aria-label="O que você quer fazer">
+      <a href="#consulta" id="m-consulta">Consultar produto</a>
+      <a href="#auditoria" id="m-auditoria">Auditar cadastro</a>
+      <a href="#tabela" id="m-tabela">Tabela cClassTrib</a>
+    </nav>
     <h1>Consulta NCM para IBS e CBS</h1>
-    <p class="sub">Consulte o enquadramento fiscal de um produto pelo NCM ou pela descrição.</p>
+    <p class="sub" id="sub">Consulte o enquadramento fiscal de um produto pelo NCM ou pela descrição.</p>
     <form class="busca" id="f" autocomplete="off" role="search">
       <label for="q">NCM ou nome do produto</label>
       <div class="campo">
@@ -126,218 +216,27 @@ footer p{margin:0 0 6px}
         <button type="submit">Consultar</button>
       </div>
       <div class="sug" id="sug" role="listbox" aria-label="Produtos encontrados"></div>
+      <div class="contexto">
+        <div><label for="dt">Data da operação</label><input type="date" id="dt"></div>
+        <div><label for="op">Operação</label><select id="op"></select></div>
+        <p class="ajuda" id="opajuda"></p>
+      </div>
       <p class="exemplos" id="ex"><span>Exemplos:</span></p>
     </form>
   </div>
 </header>
 <main class="wrap">
   <div id="res" aria-live="polite"><div class="estado">Carregando as tabelas oficiais…</div></div>
+  <div id="aud" hidden></div>
+  <div id="tab" hidden></div>
 </main>
 <footer>
   <div class="wrap">
     <div><h3>De onde vêm os dados</h3><p id="ver">—</p></div>
-    <div><h3>Como ler</h3><p>Quando o NCM tem mais de um enquadramento, o correto depende da operação e de quem compra: escolha na lista. As alíquotas da simulação são de referência; confirme na tabela oficial vigente antes de configurar um sistema.</p></div>
-    <div><h3>Quem fez</h3><p>Anselmo Xavier, Anselmo Tech.</p><p><a href="https://github.com/anselmoaxo/consulta-ncm-ibs-cbs" target="_blank" rel="noopener">Código e pipeline de dados no GitHub</a></p></div>
+    <div><h3>Como ler</h3><p>O diagnóstico vale para a data e a operação informadas. Quando a base não tem regra para o NCM, a tela diz isso e não presume tributação integral. Benefícios que dependem de condição (comprador, registro na Anvisa, diferimento) aparecem como pergunta, não como confirmados.</p></div>
+    <div><h3>Quem fez</h3><p>Anselmo Xavier, Anselmo Tech. Ferramenta informativa: confirme com o responsável fiscal antes de configurar um sistema.</p><p><a href="https://github.com/anselmoaxo/consulta-ncm-ibs-cbs" target="_blank" rel="noopener">Código e pipeline de dados no GitHub</a></p></div>
   </div>
 </footer>
-<script>
-{
-const $ = s => document.querySelector(s);
-const fmt = (v, d = 2) => v.toLocaleString('pt-BR', {minimumFractionDigits: d, maximumFractionDigits: d});
-const norm = s => (s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/<[^>]+>/g, '').toLowerCase();
-const strip = s => (s || '').replace(/<[^>]+>/g, '').replace(/^[\s-]+/, '');
-const esc = s => String(s).replace(/[&<>"]/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;'}[c]));
-const fmtNcm = c => c.length <= 4 ? c : c.length === 5 ? `${c.slice(0, 4)}.${c[4]}` : `${c.slice(0, 4)}.${c.slice(4, 6)}${c.length > 6 ? '.' + c.slice(6) : ''}`;
-const ANOS = {
-  2026: {CBS: 0.9, UF: 0.1, MUN: 0, nota: 'Em 2026 IBS e CBS só são destacados na nota, sem recolhimento, e o vTotDFe não soma esses valores.'},
-  2027: {CBS: 11.2, UF: 0.05, MUN: 0.05, nota: 'CBS de 11,2%: os 11,3% calculados pelo TCU menos 0,1 ponto. O Senado tem até 15/12/2026 para fixar a alíquota. IBS em 0,05% + 0,05%.'}
-};
-const EXEMPLOS = [['10063021', 'arroz'], ['09012100', 'café'], ['04072100', 'ovos'], ['15079011', 'óleo de soja'], ['27101932', 'óleo lubrificante'], ['22030000', 'cerveja'], ['61091000', 'camiseta']];
-let D, NCM = new Map(), IDX = [], st = {code: null, sel: null, ano: 2027, base: 1000};
-try { const s = JSON.parse(localStorage.getItem('ncmibs') || '{}'); if (ANOS[s.ano]) st.ano = s.ano; if (s.base >= 0) st.base = s.base; } catch (e) {}
-const save = () => { try { localStorage.setItem('ncmibs', JSON.stringify({ano: st.ano, base: st.base})); } catch (e) {} };
-$('#ex').insertAdjacentHTML('beforeend', EXEMPLOS.map(([c, n]) => `<button type="button" data-c="${c}">${n}</button>`).join(''));
-
-const path = c => [2, 4, 5, 6, 7].map(n => c.slice(0, n)).filter(k => D.tree[k]).map(k => [k, strip(D.tree[k])]);
-const matchRules = (c, rules) => rules.filter(r => c.startsWith(r[0]) && !r[1].some(e => c.startsWith(e)));
-
-function treatments(c) {
-  const by = new Map();
-  for (const r of matchRules(c, D.r)) {
-    const t = D.ct[r[2]];
-    if (!t || !t.anexo) continue;
-    if (!by.has(r[2])) by.set(r[2], {code: r[2], ...t, itens: []});
-    if (r[3] && !by.get(r[2]).itens.includes(r[3])) by.get(r[2]).itens.push(r[3]);
-  }
-  const cond = t => /administra[cç][aã]o p[uú]blica|[oó]rg[aã]os/i.test(t.desc) ? 2 : /insumos agropecu|diferimento/i.test(t.desc) ? 1 : 0;
-  return [...by.values()].sort((a, b) => cond(a) - cond(b) || (a.cst === '200' ? 0 : 1) - (b.cst === '200' ? 0 : 1) || b.rCBS - a.rCBS);
-}
-function regime(t) {
-  if (!t) return 'Tributação integral';
-  if (t.rCBS >= 100) return 'Alíquota zero';
-  if (t.cst === '515') return `Diferimento e redução de ${fmt(t.rCBS, 0)}%`;
-  return `Redução de ${fmt(t.rCBS, 0)}%`;
-}
-function calc(t) {
-  const a = ANOS[st.ano], red = t ? t.rCBS / 100 : 0, redI = t ? t.rIBS / 100 : 0, b = st.base;
-  const lin = [['CBS', a.CBS, red], ['IBS estadual', a.UF, redI], ['IBS municipal', a.MUN, redI]].map(([n, p, r]) => {
-    const ef = p * (1 - r); return {n, p, ef, v: Math.round(b * ef) / 100};
-  });
-  return {lin, tot: lin.reduce((s, l) => s + l.v, 0), a};
-}
-function xml(t, k) {
-  const cst = t ? t.cst : '000', cc = t ? t.code : '000001', red = t && t.cst !== '000';
-  const g = (tag, l, pTag) => {
-    const out = [`    <${tag}>`, `      <${pTag}>${l.p.toFixed(4)}</${pTag}>`];
-    if (t && t.cst === '515') out.push('      <gDif>', '        <pDif>…</pDif>', '        <vDif>…</vDif>', '      </gDif>');
-    if (red) out.push('      <gRed>', `        <pRedAliq>${(t[tag === 'gCBS' ? 'rCBS' : 'rIBS']).toFixed(4)}</pRedAliq>`, `        <pAliqEfet>${l.ef.toFixed(4)}</pAliqEfet>`, '      </gRed>');
-    out.push(`      <v${pTag.slice(1)}>${l.v.toFixed(2)}</v${pTag.slice(1)}>`, `    </${tag}>`);
-    return out;
-  };
-  const [cbs, uf, mun] = k.lin;
-  return ['<IBSCBS>', `  <CST>${cst}</CST>`, `  <cClassTrib>${cc}</cClassTrib>`, '  <gIBSCBS>', `    <vBC>${st.base.toFixed(2)}</vBC>`,
-    ...g('gIBSUF', uf, 'pIBSUF'), ...g('gIBSMun', mun, 'pIBSMun'), `    <vIBS>${(uf.v + mun.v).toFixed(2)}</vIBS>`, ...g('gCBS', cbs, 'pCBS'),
-    '  </gIBSCBS>', '</IBSCBS>'].join('\n');
-}
-const hoje = new Date().toLocaleDateString('pt-BR');
-const leiArt = t => t && t.art ? `${t.art}, LC 214/2025` : 'Art. 4º, LC 214/2025';
-const leiUrl = t => t && t.url ? t.url : 'https://www.planalto.gov.br/ccivil_03/leis/lcp/lcp214.htm#art4';
-
-function vazio() {
-  $('#res').innerHTML = `<div class="estado"><strong>Digite um NCM ou o nome de um produto</strong> para ver o CST, o cClassTrib, a base legal e o trecho do XML da NF-e. Você também pode tocar num dos exemplos acima.</div>`;
-}
-function erro(msg) { $('#res').innerHTML = `<div class="estado erro" role="alert"><strong>${msg}</strong></div>`; }
-
-function simulacao(k) {
-  return `<section class="painel" aria-labelledby="h-sim">
-    <h2 id="h-sim">Simulação do imposto</h2>
-    <div class="controles">
-      <div><span class="rot" id="rot-ano">Ano</span><div class="seg" role="group" aria-labelledby="rot-ano">${Object.keys(ANOS).map(a => `<button type="button" data-ano="${a}" aria-pressed="${+a === st.ano}">${a}</button>`).join('')}</div></div>
-      <div><label class="rot" for="b">Base em R$</label><input id="b" inputmode="decimal" value="${fmt(st.base)}"></div>
-    </div>
-    <table><caption class="sr">Simulação para ${st.ano}</caption><thead><tr><th>Tributo</th><th class="n">Alíquota</th><th class="n">Efetiva</th><th class="n">Valor</th></tr></thead><tbody>
-      ${k.lin.map(l => `<tr><td>${l.n}</td><td class="n">${fmt(l.p)}%</td><td class="n">${fmt(l.ef)}%</td><td class="n">R$ ${fmt(l.v)}</td></tr>`).join('')}
-      <tr class="tot"><td>IBS + CBS em ${st.ano}</td><td></td><td></td><td class="n">R$ ${fmt(k.tot)}</td></tr></tbody></table>
-    <p class="nota">${k.a.nota}</p>
-  </section>`;
-}
-
-function render() {
-  const c = st.code, res = $('#res');
-  if (!c) return vazio();
-  if (!/^\d{8}$/.test(c)) return erro(`O NCM tem 8 dígitos e você digitou ${c.length}. Complete o código ou busque pelo nome do produto.`);
-  const leaf = NCM.get(c);
-  if (!leaf) return erro(`O NCM ${fmtNcm(c)} não está na tabela vigente do Siscomex. Confira os dígitos ou busque pelo nome do produto.`);
-  const ts = treatments(c), t = st.sel === '__geral' ? null : (ts.find(x => x.code === st.sel) || ts[0] || null);
-  if (t) st.sel = t.code;
-  const k = calc(t), isn = [...new Set(matchRules(c, D.is).map(r => r[2]))], p = path(c);
-  const cap = p.find(x => x[0].length === 2), pos = p.find(x => x[0].length === 4);
-  const opcoes = [...ts, null];
-  res.innerHTML = `
-  <article class="ficha" aria-labelledby="h-prod">
-    <div class="ident">
-      <h2 id="h-prod">${esc(strip(leaf).replace(/\.\s*$/, ""))}</h2>
-      <div class="ncmlinha"><span>NCM <span class="cod">${fmtNcm(c)}</span></span><button type="button" class="mini" id="cpncm" aria-label="Copiar o NCM ${fmtNcm(c)}">Copiar NCM</button></div>
-      ${cap ? `<p class="cap">Capítulo ${cap[0]}: ${esc(cap[1])}${pos ? `<br>Posição ${fmtNcm(pos[0])}: ${esc(pos[1])}` : ''}</p>` : ''}
-      <div class="meta"><span class="tag ${t ? 'red' : ''}">${regime(t)}</span><span>Consultado em ${hoje}</span></div>
-    </div>
-    <hr class="divisoria">
-    <dl class="codigos">
-      <div><dt>CST IBS/CBS</dt><dd>${t ? t.cst : '000'}</dd></div>
-      <div><dt>cClassTrib</dt><dd>${t ? t.code : '000001'}</dd></div>
-    </dl>
-    <div class="leitura">
-      <div><h3>Quando se aplica</h3><p>${esc(t ? t.desc : 'Nenhum anexo da LC 214/2025 alcança este NCM. O item segue a regra geral: tributação integral pela alíquota padrão.')}</p></div>
-      <div><h3>Base legal</h3><p><a href="${esc(leiUrl(t))}" target="_blank" rel="noopener">${esc(leiArt(t))}</a>${t && t.itens.length ? `, Anexo ${t.itens.map(esc).join(' e ')}` : ''}</p></div>
-    </div>
-    ${isn.length ? `<div class="obs"><strong>Imposto Seletivo:</strong> este NCM está sujeito ao Imposto Seletivo a partir de 2027. Isso não muda o CST e o cClassTrib de IBS/CBS acima.<details><summary>${isn.length} ${isn.length > 1 ? 'classificações' : 'classificação'} do Seletivo, conforme a operação</summary><p class="nota">${isn.map(x => `<span class="mono">${x}</span> ${esc(D.isNomes[x] || '')}`).join('<br>')}</p></details></div>` : ''}
-    ${ts.length ? `<div class="alt">
-      <h3>Enquadramentos possíveis para este NCM</h3>
-      <p class="nota">${ts.length > 1 ? 'O correto depende da operação e de quem compra.' : 'Há um anexo que alcança este NCM; a regra geral também aparece para comparação.'} Escolha um para atualizar a ficha, a simulação e o XML.</p>
-      <div class="opcoes">${opcoes.map(x => {
-        const sel = x ? t && x.code === t.code : !t;
-        return `<button type="button" class="opcao" data-c="${x ? x.code : '__geral'}" aria-pressed="${sel}"><span class="cc">${x ? x.code : '000001'}</span><span><span class="reg">${regime(x)}</span> · CST ${x ? x.cst : '000'}</span><span class="q">${esc(x ? x.desc : 'Regra geral, quando nenhuma condição especial se aplica.')}</span></button>`;
-      }).join('')}</div>
-      ${ts.some(x => x.itens.length) ? `<details style="margin-top:10px"><summary class="nota">Ler o texto dos itens de anexo</summary>${ts.filter(x => x.itens.length).map(x => x.itens.map(i => `<p class="nota"><span class="mono">${esc(i)}</span> ${esc(D.anx[i] || '')}</p>`).join('')).join('')}</details>` : ''}
-    </div>` : ''}
-  </article>
-  <div class="paineis">
-    ${simulacao(k)}
-    <section class="painel" aria-labelledby="h-xml">
-      <h2 id="h-xml">XML da NF-e</h2>
-      <pre id="xml" tabindex="0" aria-label="Trecho do XML do grupo IBSCBS">${esc(xml(t, k))}</pre>
-      <div class="xmlacoes"><button type="button" id="cp">Copiar XML</button><span class="nota" id="cpmsg" role="status"></span></div>
-      <p class="nota">Grupo IBSCBS do item, NT 2025.002, com os valores da simulação de ${st.ano}.${t && t.cst === '515' ? ' O percentual de diferimento vem do regulamento.' : ''}</p>
-    </section>
-  </div>`;
-}
-function go(code, push = true) {
-  st.code = code.replace(/\D/g, ''); st.sel = null;
-  if (push) { try { history.replaceState(null, '', '#ncm-' + st.code); } catch (e) {} }
-  $('#q').value = fmtNcm(st.code); hideSug(); render();
-}
-let sugIdx = -1, sugList = [];
-function hideSug() { $('#sug').style.display = 'none'; sugIdx = -1; $('#q').setAttribute('aria-expanded', 'false'); }
-function suggest(v, show = true) {
-  const words = norm(v).split(/\s+/).filter(w => w.length > 1), digits = v.replace(/\D/g, '');
-  if (!words.length && digits.length < 2) { sugList = []; return hideSug(); }
-  if (/^[\d.\s]+$/.test(v.trim())) sugList = IDX.filter(x => x.c.startsWith(digits)).slice(0, 20);
-  else sugList = IDX.filter(x => words.every(w => x.t.includes(w))).sort((a, b) => words.every(w => b.l.includes(w)) - words.every(w => a.l.includes(w))).slice(0, 25);
-  if (!show) return;
-  const s = $('#sug');
-  s.innerHTML = sugList.length ? sugList.map((x, i) => `<button type="button" role="option" data-i="${i}"><b>${fmtNcm(x.c)}</b>${esc(x.d)}<small>${esc(x.p)}</small></button>`).join('') : `<p class="vazio">Nenhum produto encontrado para “${esc(v.trim())}”. Tente um termo mais curto, como “soja” ou “parafuso”, ou digite o NCM.</p>`;
-  s.style.display = 'block'; sugIdx = -1; $('#q').setAttribute('aria-expanded', 'true');
-}
-$('#q').addEventListener('input', e => suggest(e.target.value));
-$('#q').addEventListener('keydown', e => {
-  const btns = [...$('#sug').querySelectorAll('button')];
-  if (e.key === 'Escape') return hideSug();
-  if (!btns.length || $('#sug').style.display === 'none') return;
-  if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
-    e.preventDefault(); sugIdx = (sugIdx + (e.key === 'ArrowDown' ? 1 : -1) + btns.length) % btns.length;
-    btns.forEach((b, i) => b.classList.toggle('on', i === sugIdx)); btns[sugIdx].scrollIntoView({block: 'nearest'});
-  } else if (e.key === 'Enter' && sugIdx >= 0) { e.preventDefault(); go(sugList[sugIdx].c); }
-});
-$('#sug').addEventListener('click', e => { const b = e.target.closest('button'); if (b) go(sugList[+b.dataset.i].c); });
-document.addEventListener('click', e => { if (!e.target.closest('.busca')) hideSug(); });
-$('#f').addEventListener('submit', e => {
-  e.preventDefault(); const v = $('#q').value.trim();
-  if (!v) return;
-  if (!D) return;
-  if (/^[\d.\s-]+$/.test(v)) return go(v);
-  suggest(v, false);
-  if (sugList.length === 1) go(sugList[0].c); else suggest(v);
-});
-$('#ex').addEventListener('click', e => { const b = e.target.closest('button[data-c]'); if (b) go(b.dataset.c); });
-function copiar(texto, alvo, ok) {
-  const fim = m => { alvo.textContent = m; };
-  if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(texto).then(() => fim(ok), () => fim('Não foi possível copiar. Selecione o texto e copie.'));
-  else fim('Não foi possível copiar. Selecione o texto e copie.');
-}
-$('#res').addEventListener('click', e => {
-  const a = e.target.closest('[data-ano]'); if (a) { st.ano = +a.dataset.ano; save(); render(); $(`[data-ano="${st.ano}"]`).focus(); return; }
-  if (e.target.closest('#cp')) return copiar($('#xml').textContent, $('#cpmsg'), 'Copiado');
-  if (e.target.closest('#cpncm')) { const b = $('#cpncm'); return copiar(st.code, b, 'NCM copiado'); }
-  if (e.target.closest('summary,details,a')) return;
-  const r = e.target.closest('.opcao[data-c]'); if (r) { st.sel = r.dataset.c; render(); $(`.opcao[data-c="${st.sel}"]`).focus(); }
-});
-$('#res').addEventListener('change', e => {
-  if (e.target.id === 'b') { const v = parseFloat(e.target.value.replace(/\./g, '').replace(',', '.')); if (v >= 0) { st.base = v; save(); } render(); }
-});
-window.addEventListener('hashchange', () => { const m = location.hash.match(/^#ncm-(\d{8})$/); if (m && m[1] !== st.code) go(m[1], false); });
-
-fetch('data.json').then(r => { if (!r.ok) throw new Error(r.status); return r.json(); }).then(d => {
-  D = d;
-  for (const [c, desc] of D.ncm) NCM.set(c, desc);
-  IDX = D.ncm.map(([c, desc]) => {
-    const p = path(c).map(x => x[1]), dd = strip(desc);
-    return {c, d: dd, p: p.slice(-2).join(' / '), l: norm(dd + ' ' + (p[p.length - 1] || '')), t: norm(c + ' ' + p.join(' ') + ' ' + dd)};
-  });
-  $('#ver').innerHTML = `Regras de IBS/CBS da Calculadora oficial da Receita (módulo offline V0059) e tabela cClassTrib do IT 2025.002 v1.60, conhecidas em ${esc(D.versoes.regrasData.split('-').reverse().join('/'))}, pelo pacote aberto @sinete/ibs-cbs-dados. NCMs da tabela do Siscomex de ${esc(D.versoes.ncm.slice(0, 10).split('-').reverse().join('/'))}.`;
-  const m = location.hash.match(/^#ncm-(\d{8})$/);
-  if (m) go(m[1], false); else { vazio(); $('#q').focus(); }
-}).catch(() => erro('As tabelas não carregaram. Verifique a conexão e recarregue a página.'));
-}
-</script>
+<script type="module" src="js/app.js"></script>
 </body>
 </html>

@@ -1,0 +1,88 @@
+{
+  "_sobre": "Condições que a análise pergunta ao usuário. Mantido à mão. Cada condição cita o cClassTrib e um trecho do fundamento legal que a justifica; o build (scripts/build_data.py) confere se o trecho existe no texto da fonte oficial e falha se não existir. Assim nenhuma condição entra sem lastro no texto da lei.",
+  "operacoes": {
+    "venda": {
+      "nome": "Venda no mercado interno",
+      "ajuda": "Venda a empresa ou consumidor final, sem adquirente com tratamento próprio.",
+      "responde": {"adquirente_publico": "nao", "adquirente_publico_ou_cebas": "nao"}
+    },
+    "venda_publica": {
+      "nome": "Venda à administração pública",
+      "ajuda": "Órgão da administração pública direta, autarquia ou fundação pública.",
+      "responde": {"adquirente_publico": "sim", "adquirente_publico_ou_cebas": "sim"}
+    },
+    "venda_cebas": {
+      "nome": "Venda a entidade de saúde imune com CEBAS",
+      "ajuda": "Entidade de saúde imune ao IBS e à CBS, com CEBAS por serviços ao SUS.",
+      "responde": {"adquirente_publico": "nao", "adquirente_publico_ou_cebas": "sim"}
+    },
+    "exportacao": {"nome": "Exportação", "semCobertura": true},
+    "devolucao": {"nome": "Devolução", "semCobertura": true},
+    "remessa": {"nome": "Remessa, transferência ou bonificação", "semCobertura": true}
+  },
+  "condicoes": {
+    "adquirente_publico": {
+      "pergunta": "O comprador é órgão da administração pública direta, autarquia ou fundação pública?",
+      "porque": "Este enquadramento só vale quando o fornecimento é feito à administração pública.",
+      "origem": "operacao",
+      "lastro": [{"cClassTrib": "200043", "trecho": "fornecimento à administração pública direta, autarquias e fundações púbicas"}]
+    },
+    "adquirente_publico_ou_cebas": {
+      "pergunta": "O comprador é órgão público (direta, autarquia ou fundação) ou entidade de saúde imune com CEBAS?",
+      "porque": "A alíquota zero deste enquadramento depende de quem compra, não só do NCM.",
+      "origem": "operacao",
+      "lastro": [
+        {"cClassTrib": "200005", "trecho": "caso adquiridos por: a) órgãos da administração pública direta, autarquias e fundações públicas"},
+        {"cClassTrib": "200008", "trecho": "quando adquiridos por: a) órgãos da administração pública direta, autarquias e fundações públicas"},
+        {"cClassTrib": "200011", "trecho": "quando adquiridas por órgãos e entidades mencionados nos incisos I e II do § 1º"}
+      ]
+    },
+    "diferimento_art138": {
+      "pergunta": "A operação está entre as hipóteses de diferimento do art. 138, § 2º, da LC 214/2025?",
+      "porque": "Com diferimento, o CST passa a ser 515 e o XML ganha o grupo gDif. A base consultada cita o § 2º mas não traz a lista das hipóteses: confira os incisos no texto da lei.",
+      "origem": "pergunta",
+      "lastro": [{"cClassTrib": "515001", "trecho": "Fica diferido o recolhimento do IBS e da CBS incidentes nas seguintes operações com insumos agropecuários e aquícolas"}]
+    },
+    "producao_nacional": {
+      "pergunta": "O fornecimento está ligado a uma produção nacional artística, cultural, de eventos, jornalística ou audiovisual?",
+      "porque": "O art. 139 só reduz a alíquota nesses casos.",
+      "origem": "pergunta",
+      "lastro": [{"cClassTrib": "200039", "trecho": "nos casos relacionados com as seguintes produções nacionais artísticas, culturais, de eventos, jornalísticas e audiovisuais"}]
+    },
+    "socio_brasileiro": {
+      "pergunta": "O fornecedor é sociedade com sócio brasileiro que detém ao menos 20% do capital social?",
+      "porque": "O art. 142, II, condiciona a redução ao quadro societário do fornecedor.",
+      "origem": "pergunta",
+      "lastro": [{"cClassTrib": "200044", "trecho": "desenvolvidos por sociedade que tenha sócio brasileiro com o mínimo de 20% (vinte por cento) do seu capital social"}]
+    }
+  },
+  "porClassTrib": {
+    "200005": ["adquirente_publico_ou_cebas"],
+    "200008": ["adquirente_publico_ou_cebas"],
+    "200011": ["adquirente_publico_ou_cebas"],
+    "200043": ["adquirente_publico"],
+    "515001": ["diferimento_art138"],
+    "200038": ["!diferimento_art138"],
+    "200039": ["producao_nacional"],
+    "200044": ["socio_brasileiro"]
+  },
+  "itemRestrito": {
+    "_sobre": "Prefixo ! em porClassTrib = o enquadramento exige resposta NÃO (ex.: 200038 vale quando a operação não tem o diferimento do § 2º, que leva ao 515001). Itens de anexo cujo texto traz destinação ou restrição ('destinados', 'exclusivamente', 'próprios para', 'desde que', 'para uso'). O NCM sozinho não garante o enquadramento: pergunta-se se o produto corresponde ao texto do item.",
+    "termos": ["destinad", "exclusivamente", "próprios para", "desde que", "para uso", "uso veterinário"]
+  },
+  "lacunas": {
+    "medicamentos": {
+      "posicoes": ["3003", "3004"],
+      "conferirDescricao": "Medicamentos",
+      "titulo": "Medicamentos: o enquadramento depende do registro na Anvisa",
+      "pergunta": "O produto é medicamento registrado na Anvisa (ou produzido por farmácia de manipulação)? Consta do Anexo XIV ou é soro ou vacina?",
+      "porque": "Os enquadramentos de medicamentos (cClassTrib 200032, 200009 e 200053) dependem do registro sanitário e de listas por princípio ativo, não do NCM. A base consultada não liga esses códigos a NCMs, então o benefício não pode ser confirmado aqui.",
+      "classTrib": ["200032", "200009", "200053"],
+      "lastro": [
+        {"cClassTrib": "200032", "trecho": "medicamentos registrados na Anvisa ou produzidos por farmácias de manipulação"},
+        {"cClassTrib": "200009", "trecho": "medicamentos registrados na Anvisa, desde que destinados, de acordo com o registro sanitário"},
+        {"cClassTrib": "200053", "trecho": "classificados como soros ou vacinas"}
+      ]
+    }
+  }
+}

@@ -11,6 +11,9 @@ mkdir -p sinete && tar -xzf sinete-ibs-cbs-dados-*.tgz -C sinete
 npm pack @br-validators/core --silent
 mkdir -p brv && tar -xzf br-validators-core-*.tgz -C brv
 
+# Resposta do serviço de consulta da tabela de classificação tributária (SEFAZ), licença Apache-2.0
+curl -fsSL "https://raw.githubusercontent.com/souzamonteiro/nfeemissor/3a1610e3053e27417f28277ecdec009cf62843fb/nfeemissor/tabelas/consulta-tributacao-rtc.json" -o consulta-tributacao-rtc.json
+
 # Nomenclatura completa (com capítulos e posições) direto do portal Classif do Siscomex
 curl -fsSL "https://portalunico.siscomex.gov.br/classif/api/publico/nomenclatura/download/json" -o ncm_siscomex.json
 

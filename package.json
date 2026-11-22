@@ -1,0 +1,11 @@
+{
+  "name": "consulta-ncm-ibs-cbs",
+  "private": true,
+  "type": "module",
+  "description": "Consulta e auditoria de cadastro de IBS/CBS por NCM, operação e data.",
+  "scripts": {
+    "test": "node --test tests/*.test.mjs",
+    "lint": "node --check js/fiscal.js && node --check js/csv.js && node --check js/app.js && python3 -m py_compile scripts/build_data.py && python3 -c \"import json;json.load(open('regras/condicoes.json'));json.load(open('data.json'))\"",
+    "build:dados": "python3 scripts/build_data.py --sinete fontes/sinete/package/src/data --rtc fontes/consulta-tributacao-rtc.json --ncm-map fontes/brv/package/dist/ncm.js.map --hierarquia fontes/ncm_siscomex.json --condicoes regras/condicoes.json --saida data.json"
+  }
+}
