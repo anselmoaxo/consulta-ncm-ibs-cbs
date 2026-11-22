@@ -51,9 +51,18 @@ export function lerCSV(texto, delimitador) {
 
 const precisaAspas = (v, d) => v.includes(d) || v.includes('"') || v.includes('\n') || v.includes('\r') || /^\s|\s$/.test(v);
 
+// Proteção contra injeção de fórmula (CSV injection): uma célula que começa com
+// = + - @ TAB ou CR vira fórmula ao abrir no Excel/Planilhas. Prefixamos com apóstrofo,
+// que o Excel trata como "texto" e não exibe. Recomendação OWASP.
+const INICIO_FORMULA = /^[=+\-@\t\r]/;
+export const neutralizarFormula = s => (INICIO_FORMULA.test(s) ? "'" + s : s);
+
 export function escreverCSV(linhas, delimitador = ';') {
   if (!linhas.length) return '';
   const cab = Object.keys(linhas[0]);
-  const fmt = v => { const s = v == null ? '' : String(v); return precisaAspas(s, delimitador) ? `"${s.replace(/"/g, '""')}"` : s; };
+  const fmt = v => {
+    const s = neutralizarFormula(v == null ? '' : String(v));
+    return precisaAspas(s, delimitador) ? `"${s.replace(/"/g, '""')}"` : s;
+  };
   return [cab, ...linhas.map(l => cab.map(k => l[k]))].map(r => r.map(fmt).join(delimitador)).join('\r\n') + '\r\n';
 }

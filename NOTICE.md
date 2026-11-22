@@ -14,4 +14,7 @@ O arquivo `data.json` é derivado das seguintes fontes:
   https://www.npmjs.com/package/@br-validators/core
 - **Nomenclatura Comum do Mercosul**, portal Classif do Siscomex (dados públicos).
 
+As fontes tipográficas Public Sans e Courier Prime (pasta `fonts/`, via Fontsource) são
+licenciadas pela SIL Open Font License 1.1; as licenças estão em `fonts/OFL-*.txt`.
+
 As informações são de caráter informativo e não substituem a legislação nem a análise fiscal.

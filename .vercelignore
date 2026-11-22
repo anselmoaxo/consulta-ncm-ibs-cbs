@@ -1,0 +1,9 @@
+# Só a página, o código do navegador, os dados e o exemplo vão para o ar.
+scripts/
+tests/
+regras/
+docs/
+fontes/
+package.json
+.gitignore
+README.md

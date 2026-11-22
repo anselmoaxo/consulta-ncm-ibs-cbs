@@ -56,7 +56,7 @@ flowchart LR
 
 | Arquivo | Papel |
 | --- | --- |
-| `index.html` | Página e estilos |
+| `index.html`, `css/app.css`, `fonts/` | Página, estilos e fontes locais |
 | `js/fiscal.js` | Motor fiscal: normalização, vigência, compatibilidade, condições, diagnóstico, XML, auditoria em lote |
 | `js/csv.js` | Leitura e escrita de CSV sem converter para número (zeros à esquerda preservados) |
 | `js/app.js` | Interface |
@@ -64,6 +64,7 @@ flowchart LR
 | `exemplos/cadastro-demonstracao.csv` | Cadastro **fictício** de demonstração |
 | `scripts/build_data.py` | Gera o `data.json` a partir das fontes |
 | `tests/` | Testes (`node --test`) |
+| `vercel.json`, `.vercelignore` | Cabeçalhos de segurança e o que vai para o ar |
 
 ## Fontes de dados
 
@@ -101,6 +102,17 @@ npm run build:dados             # gera o data.json e confere o lastro das condi�
 4. Toque nos totais para filtrar e abra um item para ver o valor recebido, o motivo, a referência e a ação.
 5. Use **Abrir este item na consulta** para ver o mesmo diagnóstico na tela de consulta.
 6. **Baixar resultado em CSV** gera o arquivo com a linha original de cada item.
+
+## Segurança
+
+O site é estático e o CSV do usuário é lido só no navegador (não vai para servidor). Mesmo assim:
+
+- **Sem XSS:** todo texto vindo do CSV, da busca ou da URL é escapado antes de virar HTML. Links só saem para `https://*.gov.br`.
+- **CSP restritiva** (`vercel.json`): só scripts, estilos e fontes do próprio site; nenhum script ou estilo inline; o site não pode ser embutido em iframe. Também `nosniff`, `Referrer-Policy`, `Permissions-Policy` e COOP/CORP.
+- **Sem terceiros:** as fontes (OFL) ficam em `fonts/`; nenhuma requisição sai para outros domínios, nem analytics.
+- **Exportação sem injeção de fórmula:** células que começam com `=`, `+`, `-`, `@`, TAB ou CR recebem um apóstrofo antes de ir para o CSV, para não virarem fórmula no Excel.
+- **Integridade dos dados:** as fontes têm versão fixa e SHA-256 conferido em `scripts/baixar_fontes.sh`; o build falha se uma condição não tiver lastro no texto legal ou se um link não for oficial, e registra o SHA-256 de cada entrada em `data.json` (`versoes.hashes`).
+- **Só o necessário no ar:** `.vercelignore` tira scripts, testes e arquivos internos da publicação. Limite de 20 MB no CSV importado.
 
 ## Limitações
 

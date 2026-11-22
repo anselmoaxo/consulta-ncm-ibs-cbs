@@ -23,9 +23,11 @@ Uso:
       --hierarquia fontes/ncm_siscomex.json --condicoes regras/condicoes.json --saida data.json
 """
 import argparse
+import hashlib
 import json
 import re
 import sys
+from urllib.parse import urlparse
 
 
 def carregar(caminho, encoding="utf-8"):
@@ -36,6 +38,19 @@ def carregar(caminho, encoding="utf-8"):
 def vig(v):
     v = v or {}
     return [v.get("inicio"), v.get("fim")]
+
+
+def sha256(caminho):
+    with open(caminho, "rb") as f:
+        return hashlib.sha256(f.read()).hexdigest()
+
+
+# Links que vão para a página precisam ser https e de domínio do governo.
+def url_oficial(u):
+    if not u:
+        return True
+    p = urlparse(u)
+    return p.scheme == "https" and (p.hostname or "").endswith(".gov.br")
 
 
 def compacto(texto):
@@ -173,8 +188,23 @@ def main():
             if not (out["tree"].get(p) or "").startswith(lac["conferirDescricao"]):
                 erros.append(f"lacuna {k}: a posição {p} não começa com {lac['conferirDescricao']!r} na Nomenclatura")
 
+    for k, t in out["ct"].items():
+        if not url_oficial(t["url"]):
+            erros.append(f"cClassTrib {k}: link fora de domínio oficial https: {t['url']!r}")
+    for f in out["fontes"]:
+        if not url_oficial(f["url"]):
+            erros.append(f"fonte {f['id']}: link fora de domínio oficial https: {f['url']!r}")
+
+    # Rastreabilidade: SHA-256 de cada arquivo de entrada usado neste data.json
+    out["versoes"]["hashes"] = {
+        "sinete/classTrib.json": sha256(s + "classTrib.json"),
+        "sinete/aplicabilidadeNcm.json": sha256(s + "aplicabilidadeNcm.json"),
+        "rtc": sha256(a.rtc), "ncm-map": sha256(a.ncm_map), "hierarquia": sha256(a.hierarquia),
+        "condicoes": sha256(a.condicoes),
+    }
+
     if erros:
-        print("Condições sem lastro na fonte:\n  " + "\n  ".join(erros), file=sys.stderr)
+        print("Falhas de validação das fontes:\n  " + "\n  ".join(erros), file=sys.stderr)
         sys.exit(1)
 
     with open(a.saida, "w", encoding="utf-8") as f:

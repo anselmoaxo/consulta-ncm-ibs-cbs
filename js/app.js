@@ -16,6 +16,9 @@ const ANOS = {
   2026: {CBS: 0.9, UF: 0.1, MUN: 0, nota: 'Em 2026 IBS e CBS são destacados na nota em caráter de teste, sem recolhimento, e o vTotDFe não soma esses valores.'},
   2027: {CBS: 11.2, UF: 0.05, MUN: 0.05, nota: 'Alíquota de referência, não oficial: CBS de 11,2% (estimativa de 11,3% do TCU menos 0,1 ponto; a alíquota é fixada pelo Senado). IBS em 0,05% + 0,05%.'},
 };
+const LIMITE_CSV = 20 * 1048576; // 20 MB: evita travar a aba com arquivos gigantes
+// Só links https de domínios do governo (os dados vêm de fonte oficial; isto é uma barreira extra).
+const urlSegura = u => { try { const x = new URL(u); return x.protocol === 'https:' && /(^|\.)gov\.br$/.test(x.hostname) ? x.href : null; } catch (e) { return null; } };
 const EXEMPLOS = [['10063021', 'arroz'], ['04072100', 'ovos'], ['33061000', 'creme dental'], ['01022110', 'bovino reprodutor'], ['30049099', 'medicamento'], ['22030000', 'cerveja']];
 
 let B = null, IDX = [];
@@ -29,7 +32,7 @@ $('#ex').insertAdjacentHTML('beforeend', EXEMPLOS.map(([c, n]) => `<button type=
 function vazio() {
   $('#res').innerHTML = `<div class="estado"><strong>Digite um NCM ou o nome de um produto.</strong> Escolha a data e a operação: o resultado mostra os enquadramentos possíveis, o que falta confirmar, a fonte e o trecho do XML da NF-e. Para revisar vários produtos de uma vez, use <a href="#auditoria">Auditar cadastro</a>.</div>`;
 }
-function erro(msg, detalhe = '') { $('#res').innerHTML = `<div class="estado erro" role="alert"><strong>${esc(msg)}</strong>${detalhe ? `<p class="nota" style="margin:6px 0 0">${esc(detalhe)}</p>` : ''}</div>`; }
+function erro(msg, detalhe = '') { $('#res').innerHTML = `<div class="estado erro" role="alert"><strong>${esc(msg)}</strong>${detalhe ? `<p class="u-mt6 nota">${esc(detalhe)}</p>` : ''}</div>`; }
 
 const tag = s => `<span class="tag s-${s}">${SITUACOES[s]}</span>`;
 const estadoE = {aplicavel: 'Aplica-se', pendente: 'Depende de confirmação', excluido: 'Não se aplica a esta operação'};
@@ -42,7 +45,7 @@ function perguntasHtml(r) {
   const vistas = new Map();
   for (const e of r.enquadramentos) for (const c of e.condicoes) if (c.origem === 'pergunta' && !vistas.has(c.id)) vistas.set(c.id, c);
   if (!vistas.size) return '';
-  return `<div class="perguntas"><h3 style="margin:0;font-size:16px">Responda para fechar o enquadramento</h3>${[...vistas.values()].map(c => `
+  return `<div class="perguntas"><h3 class="u-h3">Responda para fechar o enquadramento</h3>${[...vistas.values()].map(c => `
     <div class="pergunta" role="group" aria-label="${esc(c.pergunta)}"><p><strong>${esc(c.pergunta)}</strong></p><p class="porque">${esc(c.porque)}</p>
     <div class="botoes">${[['sim', 'Sim'], ['nao', 'Não'], ['', 'Não sei']].map(([v, l]) => `<button type="button" data-resp="${esc(c.id)}" data-v="${v}" aria-pressed="${(st.respostas[c.id] || '') === v}">${l}</button>`).join('')}</div></div>`).join('')}</div>`;
 }
@@ -54,9 +57,9 @@ function enquadramentosHtml(r, sel) {
     <div class="opcoes">${r.enquadramentos.map(e => `<button type="button" class="opcao ${e.estado}" data-c="${e.cClassTrib}" aria-pressed="${sel && sel.cClassTrib === e.cClassTrib}">
       <span class="cc">${e.cClassTrib}</span>
       <span><span class="reg">${esc(e.regime)}</span> · CST ${e.cst}<span class="estado-e ${e.estado}">${estadoE[e.estado]}</span></span>
-      <span class="q">${esc(e.desc)}${e.url ? ` · <a href="${esc(e.url)}" target="_blank" rel="noopener">LC 214/2025, ${esc(e.art || '')}</a>` : ''}</span>
+      <span class="q">${esc(e.desc)}${urlSegura(e.url) ? ` · <a href="${esc(urlSegura(e.url) || '#')}" target="_blank" rel="noopener">LC 214/2025, ${esc(e.art || '')}</a>` : ''}</span>
       ${e.condicoes.length ? `<span class="q">Condição: ${e.condicoes.map(c => `${esc(c.pergunta)} ${c.exige === 'nao' ? '(precisa ser não)' : ''} → ${c.resposta ? (c.resposta === 'sim' ? 'sim' : 'não') : 'sem resposta'}`).join(' ')}</span>` : ''}
-      ${e.itens.length ? `<details><summary>Texto do item ${e.itens.map(i => esc(i.item)).join(' e ')} do anexo</summary>${e.itens.map(i => `<p class="nota" style="margin:4px 0">${esc(i.item)}: ${esc(i.texto)}</p>`).join('')}</details>` : ''}
+      ${e.itens.length ? `<details><summary>Texto do item ${e.itens.map(i => esc(i.item)).join(' e ')} do anexo</summary>${e.itens.map(i => `<p class="u-my4 nota">${esc(i.item)}: ${esc(i.texto)}</p>`).join('')}</details>` : ''}
       <span class="fonte">Fonte: ${esc(e.fonte)}</span></button>`).join('')}</div></div>`;
 }
 
@@ -69,7 +72,7 @@ function simulacao(e) {
   const tot = lin.reduce((s, l) => s + l.v, 0);
   return `<section class="painel" aria-labelledby="h-sim">
     <h2 id="h-sim">Simulação do imposto</h2>
-    <p class="nota" style="margin-top:-8px">Enquadramento ${e.cClassTrib}, ${esc(e.regime.toLowerCase())}.</p>
+    <p class="u-subt nota">Enquadramento ${e.cClassTrib}, ${esc(e.regime.toLowerCase())}.</p>
     <div class="controles">
       <div><span class="rot" id="rot-ano">Ano</span><div class="seg" role="group" aria-labelledby="rot-ano">${Object.keys(ANOS).map(y => `<button type="button" data-ano="${y}" aria-pressed="${+y === st.ano}">${y}</button>`).join('')}</div></div>
       <div><label class="rot" for="b">Base em R$</label><input id="b" inputmode="decimal" value="${fmt(st.base)}"></div>
@@ -121,13 +124,13 @@ function renderConsulta() {
       <div><dt>CST IBS/CBS ${cod ? '' : '(a confirmar)'}</dt><dd>${cod ? cod.cst : '—'}</dd></div>
       <div><dt>cClassTrib ${cod ? '' : '(a confirmar)'}</dt><dd>${cod ? cod.cClassTrib : '—'}</dd></div>
     </dl>
-    ${r.semRegra ? `<p class="semregra" style="margin-top:14px">${SEM_REGRA}</p>` : ''}
+    ${r.semRegra ? `<p class="u-mt14 semregra">${SEM_REGRA}</p>` : ''}
     <div class="leitura">
       <div><h3>Diagnóstico</h3>${achadosHtml(r)}</div>
-      ${cod ? `<div><h3>Quando se aplica</h3><p>${esc(cod.desc)}</p></div><div><h3>Base legal</h3><p>${cod.url ? `<a href="${esc(cod.url)}" target="_blank" rel="noopener">LC 214/2025, ${esc(cod.art || '')}</a>` : esc(cod.art || '')}${cod.itens.length ? `, Anexo ${cod.itens.map(i => esc(i.item)).join(' e ')}` : ''}</p></div>` : ''}
+      ${cod ? `<div><h3>Quando se aplica</h3><p>${esc(cod.desc)}</p></div><div><h3>Base legal</h3><p>${urlSegura(cod.url) ? `<a href="${esc(urlSegura(cod.url))}" target="_blank" rel="noopener">LC 214/2025, ${esc(cod.art || '')}</a>` : esc(cod.art || '')}${cod.itens.length ? `, Anexo ${cod.itens.map(i => esc(i.item)).join(' e ')}` : ''}</p></div>` : ''}
     </div>
     ${perguntasHtml(r)}
-    ${r.lacuna ? `<div class="obs"><strong>${esc(r.lacuna.titulo)}.</strong> ${esc(r.lacuna.porque)}<br><strong>Confirme:</strong> ${esc(r.lacuna.pergunta)}<br>${r.lacuna.classTrib.map(c => `<span class="mono">${c.cClassTrib}</span> ${esc(c.nome)} (<a href="${esc(c.url)}" target="_blank" rel="noopener">LC 214/2025, ${esc(c.art)}</a>)`).join('<br>')}</div>` : ''}
+    ${r.lacuna ? `<div class="obs"><strong>${esc(r.lacuna.titulo)}.</strong> ${esc(r.lacuna.porque)}<br><strong>Confirme:</strong> ${esc(r.lacuna.pergunta)}<br>${r.lacuna.classTrib.map(c => `<span class="mono">${c.cClassTrib}</span> ${esc(c.nome)} (<a href="${esc(urlSegura(c.url) || '#')}" target="_blank" rel="noopener">LC 214/2025, ${esc(c.art)}</a>)`).join('<br>')}</div>` : ''}
     ${r.avisos.map(a => `<div class="obs"><strong>Imposto Seletivo:</strong> ${esc(a)}</div>`).join('')}
     ${enquadramentosHtml(r, sel)}
   </article>
@@ -207,13 +210,13 @@ function renderAuditoria() {
   const el = $('#aud');
   const passo1 = `<section class="painel passo" aria-labelledby="h-p1">
     <h2 id="h-p1">Importar o cadastro</h2>
-    <p class="nota">Exporte do ERP um CSV com SKU, descrição, NCM, CST IBS/CBS, cClassTrib e, se tiver, operação e data. Vírgula ou ponto e vírgula; o arquivo é lido no seu navegador e não é enviado para nenhum servidor. Linhas sem CST e cClassTrib também são analisadas.</p>
+    <p class="nota">Exporte do ERP um CSV (até 20 MB) com SKU, descrição, NCM, CST IBS/CBS, cClassTrib e, se tiver, operação e data. Vírgula ou ponto e vírgula; o arquivo é lido no seu navegador e não é enviado para nenhum servidor. Linhas sem CST e cClassTrib também são analisadas.</p>
     <div class="arquivo">
       <label class="sr" for="arq">Arquivo CSV do cadastro</label><input type="file" id="arq" accept=".csv,text/csv,text/plain">
       <button type="button" id="demo">Usar cadastro de demonstração</button>
       <a href="exemplos/cadastro-demonstracao.csv" download>Baixar CSV de exemplo</a>
     </div>
-    ${aud.msg ? `<p class="estado erro" role="alert" style="margin-top:12px;padding:12px 16px">${esc(aud.msg)}</p>` : ''}
+    ${aud.msg ? `<p class="u-alerta estado erro" role="alert">${esc(aud.msg)}</p>` : ''}
   </section>`;
   let passo2 = '', passo3 = '';
   if (aud.csv) {
@@ -222,11 +225,11 @@ function renderAuditoria() {
       <h2 id="h-p2">Conferir colunas e contexto</h2>
       <p class="nota">${aud.demo ? '<strong>Cadastro fictício de demonstração.</strong> ' : ''}Arquivo <span class="mono">${esc(aud.nome)}</span>: ${c.registros.length} linha${c.registros.length !== 1 ? 's' : ''} de dados, separador “${c.delimitador === ';' ? 'ponto e vírgula' : 'vírgula'}”.</p>
       <div class="mapa">${COLUNAS.map(([k, nome]) => `<div><label for="map-${k}">${nome}${k === 'ncm' ? ' (obrigatória)' : ''}</label><select id="map-${k}" data-map="${k}"><option value="-1">Não tem no arquivo</option>${c.cabecalho.map((h, i) => `<option value="${i}" ${aud.mapa[k] === i ? 'selected' : ''}>${esc(h || `Coluna ${i + 1}`)}</option>`).join('')}</select></div>`).join('')}</div>
-      <h3 style="margin:8px 0 4px;font-size:15px">Para todo o lote</h3>
-      <p class="nota" style="margin:0 0 6px">Valem para as linhas do arquivo que não trazem o tipo de venda ou a data.</p>
+      <h3 class="u-h4">Para todo o lote</h3>
+      <p class="u-mb6 nota">Valem para as linhas do arquivo que não trazem o tipo de venda ou a data.</p>
       <div class="lote"><div><label for="lote-data">Data de emissão da nota</label><input type="date" id="lote-data" value="${aud.lote.data}"></div>
-        <div><label for="lote-op">Para quem você está vendendo?</label><select id="lote-op" aria-describedby="lote-op-ajuda">${opcoesOp(aud.lote.operacao)}</select><p class="nota" id="lote-op-ajuda" style="margin:4px 0 0">${esc(B.ops[aud.lote.operacao]?.ajuda || '')}</p></div></div>
-      <h3 style="margin:8px 0 6px;font-size:15px">Amostra do arquivo</h3>
+        <div><label for="lote-op">Para quem você está vendendo?</label><select id="lote-op" aria-describedby="lote-op-ajuda">${opcoesOp(aud.lote.operacao)}</select><p class="u-mt4 nota" id="lote-op-ajuda">${esc(B.ops[aud.lote.operacao]?.ajuda || '')}</p></div></div>
+      <h3 class="u-h4b">Amostra do arquivo</h3>
       <div class="tabela"><table><thead><tr><th>Linha</th>${c.cabecalho.map(h => `<th>${esc(h)}</th>`).join('')}</tr></thead><tbody>
         ${c.registros.slice(0, 5).map(r => `<tr><td class="cod">${r.linha}</td>${c.cabecalho.map((_, i) => `<td class="cod">${esc(r.campos[i] ?? '')}</td>`).join('')}</tr>`).join('')}</tbody></table></div>
       <div class="exportar"><button type="button" class="botao-pri" id="analisar" ${aud.mapa.ncm < 0 ? 'disabled' : ''}>Analisar cadastro</button>${aud.mapa.ncm < 0 ? '<span class="nota">Escolha a coluna do NCM para continuar.</span>' : ''}</div>
@@ -265,7 +268,7 @@ function itemHtml(x) {
       ${achadosHtml(r)}
       ${r.pendencias.length ? `<p class="nota"><strong>Para confirmar:</strong> ${r.pendencias.map(p => esc(p.pergunta)).join(' ')}</p>` : ''}
       ${r.avisos.map(a => `<p class="nota">${esc(a)}</p>`).join('')}
-      ${r.produto ? `<p style="margin:10px 0 0"><a href="#ncm-${r.entrada.ncm}" data-abrir="${reg.linha}">Abrir este item na consulta com os mesmos dados</a></p>` : ''}
+      ${r.produto ? `<p class="u-mt10"><a href="#ncm-${r.entrada.ncm}" data-abrir="${reg.linha}">Abrir este item na consulta com os mesmos dados</a></p>` : ''}
     </div>` : ''}</div>`;
 }
 
@@ -299,6 +302,7 @@ function csvResultado() {
 $('#aud').addEventListener('change', e => {
   if (e.target.id === 'arq' && e.target.files[0]) {
     const f = e.target.files[0];
+    if (f.size > LIMITE_CSV) { aud.msg = `O arquivo ${f.name} tem ${(f.size / 1048576).toFixed(1).replace('.', ',')} MB. O limite é ${LIMITE_CSV / 1048576} MB: divida o cadastro em partes.`; aud.csv = null; aud.res = null; return renderAuditoria(); }
     f.text().then(t => carregarTexto(t, f.name, false), () => { aud.msg = 'Não foi possível ler o arquivo. Tente salvar como CSV (UTF-8) e importar de novo.'; renderAuditoria(); });
   }
   if (e.target.dataset.map) { aud.mapa[e.target.dataset.map] = +e.target.value; aud.res = null; renderAuditoria(); $(`#map-${e.target.dataset.map}`).focus(); }
@@ -360,7 +364,7 @@ function renderTabela() {
       <span class="nota" id="tmsg" role="status"></span>
     </div>
     <div class="tabela"><table class="tabct"><thead><tr><th>cClassTrib</th><th>CST</th><th>Nome</th><th>Redução</th><th>Base legal</th><th>Vigência</th><th>NF-e</th></tr></thead><tbody>
-      ${ls.map(l => `<tr><td class="cod">${l.cClassTrib}</td><td class="cod">${l.CST}</td><td class="desc">${esc(l.Nome)}</td><td>${red(l)}</td><td>${l.Link ? `<a href="${esc(l.Link)}" target="_blank" rel="noopener">${esc(l['Base legal'] || 'LC 214/2025')}</a>` : esc(l['Base legal'])}</td><td class="cod">${l['Início da vigência']}${l['Fim da vigência'] ? ' a ' + l['Fim da vigência'] : ' em diante'}</td><td>${l['Usado em NF-e'] || '—'}</td></tr>`).join('') || '<tr><td colspan="7">Nenhum código com esse filtro.</td></tr>'}
+      ${ls.map(l => `<tr><td class="cod">${l.cClassTrib}</td><td class="cod">${l.CST}</td><td class="desc">${esc(l.Nome)}</td><td>${red(l)}</td><td>${urlSegura(l.Link) ? `<a href="${esc(urlSegura(l.Link))}" target="_blank" rel="noopener">${esc(l['Base legal'] || 'LC 214/2025')}</a>` : esc(l['Base legal'])}</td><td class="cod">${l['Início da vigência']}${l['Fim da vigência'] ? ' a ' + l['Fim da vigência'] : ' em diante'}</td><td>${l['Usado em NF-e'] || '—'}</td></tr>`).join('') || '<tr><td colspan="7">Nenhum código com esse filtro.</td></tr>'}
     </tbody></table></div>
     <p class="nota">A planilha sai em CSV com ponto e vírgula (abre no Excel e no Google Planilhas) e traz também a descrição completa, as reduções por tributo, os grupos do XML exigidos pelo CST e a data de publicação.</p>
   </section>`;
