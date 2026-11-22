@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Consulta NCM IBS/CBS</title>
+<meta name="description" content="Digite o NCM ou o nome do produto e veja CST, cClassTrib e redução de IBS/CBS pela LC 214/2025, com o trecho do XML da NF-e. Dados oficiais da Receita Federal e do Siscomex.">
+<meta property="og:title" content="Consulta NCM para IBS e CBS">
+<meta property="og:description" content="CST, cClassTrib, redução pela LC 214/2025 e XML da NF-e a partir do NCM. Tabelas oficiais da Receita e do Siscomex.">
+<meta property="og:type" content="website">
+<meta name="theme-color" content="#06222e">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%2306222e'/%3E%3Ctext x='32' y='42' font-family='Arial' font-weight='700' font-size='26' fill='%23ff2e7e' text-anchor='middle'%3ENCM%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* VOICE work tool for fiscal consultants, precise and calm
+   IDEA the classification card a consultant fills before configuring an ERP item, plus the XML it produces
+   PICTURE the live result card: NCM, regime verdict, CST/cClassTrib large, and the gIBSCBS XML beside it
+   COLOUR ice ground, deep ink, one hot pink accent for the verdict
+   TYPE Space Grotesk 500/700 + Inter
+   LAYOUT title and search across the top; card left, XML and simulation right; table of all treatments below; phone stacks */
+:root{color-scheme:light dark;--bg:light-dark(#dff1f7,#06222e);--ink:light-dark(#06222e,#e3f2f7);--soft:light-dark(#3c5a66,#9fc0cc);--panel:light-dark(#ffffff,#0b3242);--line:light-dark(#b9d7e2,#1d4c5e);--acc:#ff2e7e;--accs:light-dark(#ffe1ec,#4a1630);--code:light-dark(#06222e,#021821);--codeink:#cfeaf3}
+:root[data-theme=light]{color-scheme:light}
+:root[data-theme=dark]{color-scheme:dark}
+*{box-sizing:border-box;min-width:0}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font:16px/1.55 Inter,system-ui,sans-serif;overflow-x:clip}
+h1,h2,h3,.big{font-family:"Space Grotesk",Inter,sans-serif;letter-spacing:-.02em;line-height:1.05;margin:0}
+h1{font-size:clamp(30px,4.4vw,46px);font-weight:700;text-wrap:balance;max-width:16em}
+h2{font-size:22px;font-weight:700}
+a{color:inherit;text-underline-offset:3px}
+.band{padding-block:clamp(22px,3.4vw,48px);padding-inline:max(5vw,16px)}
+.wrap{max-width:1240px;margin:0 auto}
+.lead{color:var(--soft);margin:10px 0 18px;max-width:62ch}
+.search{display:flex;gap:10px;flex-wrap:wrap;position:relative;max-width:760px}
+.search input{flex:1 1 260px;font:16px Inter,sans-serif;padding:13px 14px;border:1.5px solid var(--line);border-radius:10px;background:var(--panel);color:var(--ink);min-height:48px}
+.search input:focus,button:focus-visible,.chip:focus-visible,tr:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
+button{font:600 15px Inter,sans-serif;min-height:48px;padding:0 20px;border-radius:10px;border:0;background:var(--ink);color:var(--bg);cursor:pointer}
+button:hover{filter:brightness(1.15)}
+button.ghost{background:transparent;color:var(--ink);border:1.5px solid var(--line);min-height:36px;padding:0 12px;font-size:13px}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.chip{font:500 14px Inter,sans-serif;padding:7px 12px;border-radius:99px;border:1px solid var(--line);background:transparent;color:var(--ink);cursor:pointer;min-height:36px}
+.chip:hover{border-color:var(--acc)}
+.sug{position:absolute;top:54px;left:0;right:0;z-index:5;background:var(--panel);border:1px solid var(--line);border-radius:10px;max-height:340px;overflow:auto;box-shadow:0 10px 24px rgb(0 0 0/.12);display:none}
+.sug button{display:block;width:100%;text-align:left;background:transparent;color:var(--ink);border-radius:0;border-bottom:1px solid var(--line);padding:9px 12px;min-height:44px;font-weight:400}
+.sug button:hover,.sug button.on{background:var(--accs)}
+.sug b{font-family:"Space Grotesk",sans-serif;font-weight:700;margin-right:8px;white-space:nowrap}
+.sug small{color:var(--soft);display:block}
+.grid{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);gap:18px;align-items:stretch}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:clamp(16px,2.4vw,26px)}
+.ncm{font-size:clamp(34px,5vw,54px);font-weight:700;white-space:nowrap}
+.path{list-style:none;margin:12px 0 0;padding:0;color:var(--soft);font-size:14px}
+.path li{padding-left:calc(var(--d)*12px)}
+.path li:last-child{color:var(--ink);font-weight:600;font-size:16px}
+.verdict{margin-top:18px;border-radius:12px;padding:16px 18px;background:var(--accs);border-left:6px solid var(--acc)}
+.verdict.plain{background:color-mix(in srgb,var(--line) 35%,transparent);border-left-color:var(--soft)}
+.verdict .big{font-size:clamp(26px,3.4vw,36px);font-weight:700}
+.codes{display:flex;flex-wrap:wrap;gap:10px 26px;margin:12px 0 6px}
+.codes span{display:block;font-size:13px;color:var(--soft)}
+.codes b{font:700 26px "Space Grotesk",sans-serif;white-space:nowrap}
+.cond{margin:8px 0 0;font-size:15px}
+.warn{margin-top:14px;padding:12px 14px;border-radius:10px;border:1.5px dashed var(--acc);font-size:15px}
+.err{font-size:18px}
+pre{margin:0;background:var(--code);color:var(--codeink);border-radius:10px;padding:14px;font:13px/1.5 ui-monospace,Menlo,Consolas,monospace;overflow-x:auto;max-height:380px}
+.row{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+.seg{display:inline-flex;border:1.5px solid var(--line);border-radius:10px;overflow:hidden}
+.seg button{background:transparent;color:var(--ink);border-radius:0;min-height:40px;padding:0 14px}
+.seg button[aria-pressed=true]{background:var(--ink);color:var(--bg)}
+label{font-size:14px;color:var(--soft)}
+.base{display:flex;align-items:center;gap:8px}
+.base input{width:9em;font:16px Inter,sans-serif;padding:8px 10px;border:1.5px solid var(--line);border-radius:8px;background:var(--panel);color:var(--ink);min-height:40px;text-align:right}
+table{width:100%;border-collapse:collapse;font-size:15px}
+th,td{padding:9px 8px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+th{font-size:13px;color:var(--soft);font-weight:600}
+td.n,th.n{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
+tr.tot td{font-weight:700;border-bottom:0}
+.sim{margin-top:16px}
+.note{font-size:13px;color:var(--soft);margin:8px 0 0}
+#tbl tr[data-c]{cursor:pointer}
+#tbl tr.sel td{background:var(--accs)}
+#tbl td:first-child{font:700 16px "Space Grotesk",sans-serif;white-space:nowrap}
+.tag{display:inline-block;font-size:12px;font-weight:600;padding:2px 8px;border-radius:99px;background:var(--accs);white-space:nowrap}
+details{margin-top:6px}
+summary{cursor:pointer;color:var(--soft);font-size:14px}
+.is{display:none;margin-top:18px}
+.foot{background:var(--ink);color:var(--bg)}
+.foot .wrap{display:grid;grid-template-columns:repeat(auto-fit,minmax(16em,1fr));gap:20px;font-size:14px}
+.foot h3{font-size:17px;margin-bottom:6px}
+.foot p{margin:0 0 6px}
+.scroll{overflow-x:auto}
+@media(max-width:900px){.grid{grid-template-columns:minmax(0,1fr)}}
+@media(max-width:600px){table{font-size:13px}th,td{padding:6px 4px}.stack thead{display:none}.stack tr{display:grid;padding-block:10px;border-bottom:1px solid var(--line)}.stack td{display:flex;justify-content:space-between;gap:12px;border:0;padding:3px 0}.stack td::before{content:attr(data-l);color:var(--soft);font:400 13px Inter,sans-serif;flex:none}.stack td[data-l=Quando]{display:block}.stack td[data-l=Quando]::before{display:block}.codes b{font-size:22px}}
+@media(prefers-reduced-motion:no-preference){.verdict{animation:in .35s ease-out}@keyframes in{from{transform:translateY(6px)}}}
+</style>
+</head>
+<body>
+<header class="band"><div class="wrap">
+  <h1>Consulta NCM para IBS e CBS</h1>
+  <p class="lead">Digite o NCM ou o nome do produto e veja o CST, o cClassTrib e a redução de alíquota previstos na LC 214/2025, com o trecho do XML da NF-e.</p>
+  <form class="search" id="f" autocomplete="off">
+    <input id="q" inputmode="search" placeholder="Ex.: 1006.30.21 ou arroz" aria-label="NCM ou descrição do produto">
+    <button type="submit">Consultar</button>
+    <div class="sug" id="sug" role="listbox"></div>
+  </form>
+  <div class="chips" id="chips"></div>
+</div></header>
+
+<main class="band" style="padding-top:0"><div class="wrap">
+  <div id="res"><p class="note">Carregando as tabelas oficiais…</p></div>
+</div></main>
+
+<footer class="band foot"><div class="wrap">
+  <div><h3>Fontes e versões</h3><p id="ver">—</p></div>
+  <div><h3>Como ler o resultado</h3><p>A regra geral da reforma é tributar: sem enquadramento em anexo ou regra específica, o item usa CST 000 e cClassTrib 000001. Quando há mais de um enquadramento, vale o que corresponde à operação e ao adquirente, e a alíquota zero prevalece sobre a redução (art. 7º-A da LC 214).</p></div>
+  <div><h3>Aviso</h3><p>Ferramenta informativa de portfólio, feita por Anselmo Xavier (Anselmo Tech). Não substitui análise fiscal: confirme na tabela oficial vigente antes de parametrizar um sistema.</p><p><a href="https://github.com/anselmoaxo/consulta-ncm-ibs-cbs" target="_blank" rel="noopener">Código-fonte e pipeline de dados no GitHub</a></p></div>
+</div></footer>
+
+<script>
+{
+const $ = s => document.querySelector(s);
+const fmt = (v, d = 2) => v.toLocaleString('pt-BR', {minimumFractionDigits: d, maximumFractionDigits: d});
+const norm = s => (s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/<[^>]+>/g, '').toLowerCase();
+const strip = s => (s || '').replace(/<[^>]+>/g, '');
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;'}[c]));
+const fmtNcm = c => c.length <= 4 ? c : c.length === 5 ? `${c.slice(0, 4)}.${c[4]}` : `${c.slice(0, 4)}.${c.slice(4, 6)}${c.length > 6 ? '.' + c.slice(6) : ''}`;
+const ANOS = {
+  2026: {CBS: 0.9, UF: 0.1, MUN: 0, nota: '2026 é ano de teste: IBS e CBS são só destacados, sem recolhimento, e o vTotDFe não soma esses valores.'},
+  2027: {CBS: 11.2, UF: 0.05, MUN: 0.05, nota: 'CBS de 11,2% = 11,3% calculados pelo TCU menos 0,1 ponto; o Senado tem até 15/12/2026 para fixar a alíquota. IBS em 0,05% + 0,05%.'}
+};
+const EXEMPLOS = [['10063021', 'Arroz'], ['09012100', 'Café'], ['04072100', 'Ovos'], ['15079011', 'Óleo de soja'], ['27101932', 'Óleo lubrificante'], ['22030000', 'Cerveja'], ['61091000', 'Camiseta']];
+let D, NCM = new Map(), IDX = [], st = {code: null, sel: null, ano: 2027, base: 1000};
+try { const s = JSON.parse(localStorage.getItem('ncmibs') || '{}'); if (s.ano) st.ano = s.ano; if (s.base) st.base = s.base; } catch (e) {}
+const save = () => { try { localStorage.setItem('ncmibs', JSON.stringify({ano: st.ano, base: st.base})); } catch (e) {} };
+
+$('#chips').innerHTML = EXEMPLOS.map(([c, n]) => `<button type="button" class="chip" data-c="${c}">${n}</button>`).join('');
+
+const path = c => [2, 4, 5, 6, 7].map(n => c.slice(0, n)).filter(k => D.tree[k]).map(k => [k, strip(D.tree[k])]);
+const matchRules = (c, rules) => rules.filter(r => c.startsWith(r[0]) && !r[1].some(e => c.startsWith(e)));
+
+function treatments(c) {
+  const by = new Map();
+  for (const r of matchRules(c, D.r)) {
+    const t = D.ct[r[2]];
+    if (!t || !t.anexo) continue;
+    if (!by.has(r[2])) by.set(r[2], {code: r[2], ...t, itens: []});
+    if (r[3] && !by.get(r[2]).itens.includes(r[3])) by.get(r[2]).itens.push(r[3]);
+  }
+  const pub = t => /administra[cç][aã]o p[uú]blica|[oó]rg[aã]os/i.test(t.desc) ? 2 : /insumos agropecu|diferimento/i.test(t.desc) ? 1 : 0;
+  return [...by.values()].sort((a, b) => pub(a) - pub(b) || (a.cst === '200' ? 0 : 1) - (b.cst === '200' ? 0 : 1) || b.rCBS - a.rCBS);
+}
+
+function regime(t) {
+  if (!t) return 'Tributação integral';
+  if (t.rCBS >= 100) return 'Alíquota zero';
+  if (t.cst === '515') return `Diferimento com redução de ${fmt(t.rCBS, 0)}%`;
+  return `Redução de ${fmt(t.rCBS, 0)}%`;
+}
+
+function calc(t) {
+  const a = ANOS[st.ano], red = t ? t.rCBS / 100 : 0, redI = t ? t.rIBS / 100 : 0, b = st.base;
+  const lin = [['CBS', a.CBS, red], ['IBS estadual', a.UF, redI], ['IBS municipal', a.MUN, redI]].map(([n, p, r]) => {
+    const ef = p * (1 - r); return {n, p, ef, v: Math.round(b * ef) / 100};
+  });
+  return {lin, tot: lin.reduce((s, l) => s + l.v, 0), a};
+}
+
+function xml(t, k) {
+  const cst = t ? t.cst : '000', cc = t ? t.code : '000001', b = st.base.toFixed(2);
+  const red = t && t.cst !== '000';
+  const g = (tag, l, pTag) => {
+    const lines = [`      <${pTag}>${l.p.toFixed(4)}</${pTag}>`];
+    if (t && t.cst === '515') lines.push('      <gDif><pDif>…</pDif><vDif>…</vDif></gDif>');
+    if (red) lines.push('      <gRed>', `        <pRedAliq>${(t[tag === 'gCBS' ? 'rCBS' : 'rIBS']).toFixed(4)}</pRedAliq>`, `        <pAliqEfet>${l.ef.toFixed(4)}</pAliqEfet>`, '      </gRed>');
+    lines.push(`      <${'v' + pTag.slice(1)}>${l.v.toFixed(2)}</${'v' + pTag.slice(1)}>`);
+    return [`    <${tag}>`, ...lines, `    </${tag}>`];
+  };
+  const [cbs, uf, mun] = k.lin;
+  return ['<IBSCBS>', `  <CST>${cst}</CST>`, `  <cClassTrib>${cc}</cClassTrib>`, '  <gIBSCBS>', `    <vBC>${b}</vBC>`,
+    ...g('gIBSUF', uf, 'pIBSUF'), ...g('gIBSMun', mun, 'pIBSMun'), `    <vIBS>${(uf.v + mun.v).toFixed(2)}</vIBS>`, ...g('gCBS', cbs, 'pCBS'),
+    '  </gIBSCBS>', '</IBSCBS>'].join('\n');
+}
+
+function render() {
+  const c = st.code, res = $('#res');
+  if (!c) { res.innerHTML = ''; return; }
+  if (!/^\d{8}$/.test(c)) { res.innerHTML = `<div class="card err">O NCM precisa ter 8 dígitos. Você digitou <b>${esc(c)}</b>.</div>`; return; }
+  const leaf = NCM.get(c);
+  if (!leaf) { res.innerHTML = `<div class="card err"><b>${fmtNcm(c)}</b> não existe na tabela NCM vigente (Siscomex, set/2026). Confira o código ou busque pelo nome do produto.</div>`; return; }
+  const ts = treatments(c), t = st.sel === '__none' ? null : (ts.find(x => x.code === st.sel) || ts[0] || null);
+  if (t) st.sel = t.code;
+  const k = calc(t), isr = matchRules(c, D.is), isn = [...new Set(isr.map(r => r[2]))];
+  const p = path(c);
+  res.innerHTML = `
+  <div class="grid">
+    <section class="card" aria-label="Classificação">
+      <div class="ncm big">${fmtNcm(c)}</div>
+      <ol class="path">${p.map(([kk, d], i) => `<li style="--d:${i}">${fmtNcm(kk)} · ${esc(d)}</li>`).join('')}<li style="--d:${p.length}">${esc(strip(leaf))}</li></ol>
+      <div class="verdict ${t ? '' : 'plain'}">
+        <div class="big">${regime(t)}</div>
+        <div class="codes"><div><span>CST IBS/CBS</span><b>${t ? t.cst : '000'}</b></div><div><span>cClassTrib</span><b>${t ? t.code : '000001'}</b></div><div><span>Base legal</span><b>${t && t.art ? esc(t.art) : 'Art. 4º'}</b></div></div>
+        <p class="cond">${esc(t ? t.desc : 'Nenhum anexo da LC 214 alcança este NCM: vale a tributação integral pela alíquota padrão.')}</p>
+        ${t && t.url ? `<p class="note"><a href="${esc(t.url)}" target="_blank" rel="noopener">Ler o artigo na LC 214/2025</a>${t.itens.length ? ' · Anexo ' + t.itens.map(esc).join(', ') : ''}</p>` : ''}
+      </div>
+      ${ts.length > 1 ? `<p class="warn">Este NCM tem ${ts.length} enquadramentos possíveis. O certo depende da operação e do adquirente: veja a tabela abaixo e toque numa linha para trocar.</p>` : ''}
+      <div class="is card warn" style="display:${isn.length ? 'block' : 'none'}"><b>Sujeito ao Imposto Seletivo a partir de 2027.</b> O IS é cobrado uma vez, em geral no primeiro fornecimento pelo fabricante ou na importação.
+        <details><summary>Classificações de IS possíveis (${isn.length})</summary><p class="note">${isn.map(x => `${x} · ${esc(D.isNomes[x] || '')}`).join('<br>')}</p></details></div>
+    </section>
+    <section class="card" aria-label="XML e simulação">
+      <div class="row"><h2>No XML da NF-e</h2><button type="button" class="ghost" id="cp">Copiar XML</button></div>
+      <pre id="xml">${esc(xml(t, k))}</pre>
+      <p class="note">Grupo IBSCBS do item, simplificado (NT 2025.002).${t && t.cst === '515' ? ' O gDif é obrigatório; o percentual vem do regulamento.' : ''}</p>
+      <div class="sim">
+        <div class="row"><div class="seg" role="group" aria-label="Ano">${Object.keys(ANOS).map(a => `<button type="button" data-ano="${a}" aria-pressed="${+a === st.ano}">${a}</button>`).join('')}</div>
+          <div class="base"><label for="b">Base (R$)</label><input id="b" inputmode="decimal" value="${fmt(st.base)}"></div></div>
+        <table><thead><tr><th>Tributo</th><th class="n">Alíquota</th><th class="n">Efetiva</th><th class="n">Valor</th></tr></thead><tbody>
+          ${k.lin.map(l => `<tr><td>${l.n}</td><td class="n">${fmt(l.p, 2)}%</td><td class="n">${fmt(l.ef, 2)}%</td><td class="n">R$ ${fmt(l.v)}</td></tr>`).join('')}
+          <tr class="tot"><td>Total IBS + CBS</td><td></td><td></td><td class="n">R$ ${fmt(k.tot)}</td></tr></tbody></table>
+        <p class="note">${k.a.nota}</p>
+      </div>
+    </section>
+  </div>
+  <section class="card" style="margin-top:18px">
+    <h2>Todos os enquadramentos para este NCM</h2>
+    <p class="note">Inclui a regra geral. A redução vem dos anexos da LC 214; condições como "administração pública" ou "insumo agropecuário" dependem de quem compra e para quê.</p>
+    <div class="scroll"><table class="stack" id="tbl"><thead><tr><th>cClassTrib</th><th>CST</th><th>Regime</th><th>Quando se aplica</th><th>Base legal</th></tr></thead><tbody>
+      ${ts.map(x => `<tr data-c="${x.code}" tabindex="0" class="${x.code === st.sel ? 'sel' : ''}"><td data-l="cClassTrib">${x.code}</td><td data-l="CST">${x.cst}</td><td data-l="Regime"><span class="tag">${regime(x)}</span></td><td data-l="Quando"><div>${esc(x.desc)}${x.itens.length ? `<details><summary>Texto do anexo (${x.itens.map(esc).join(', ')})</summary><p class="note">${x.itens.map(i => `<b>${esc(i)}</b> ${esc(D.anx[i] || '')}`).join('<br>')}</p></details>` : ''}</div></td><td data-l="Base legal">${esc(x.art || '')}</td></tr>`).join('')}
+      <tr data-c="" tabindex="0" class="${!t ? 'sel' : ''}"><td data-l="cClassTrib">000001</td><td data-l="CST">000</td><td data-l="Regime"><span class="tag">Tributação integral</span></td><td data-l="Quando"><div>Regra geral: sem condição especial do anexo, o item é tributado integralmente.</div></td><td data-l="Base legal">Art. 4º</td></tr>
+    </tbody></table></div>
+  </section>`;
+}
+
+function go(code, push = true) {
+  st.code = code.replace(/\D/g, ''); st.sel = null;
+  if (push) { try { history.replaceState(null, '', '#ncm-' + st.code); } catch (e) { location.hash = 'ncm-' + st.code; } }
+  $('#q').value = fmtNcm(st.code);
+  hideSug(); render();
+}
+
+let sugIdx = -1, sugList = [];
+function hideSug() { $('#sug').style.display = 'none'; sugIdx = -1; }
+function suggest(v) {
+  const words = norm(v).split(/\s+/).filter(w => w.length > 1);
+  const digits = v.replace(/\D/g, '');
+  if (!words.length && digits.length < 2) return hideSug();
+  if (/^[\d.\s]+$/.test(v.trim())) sugList = IDX.filter(x => x.c.startsWith(digits)).slice(0, 20);
+  else sugList = IDX.filter(x => words.every(w => x.t.includes(w))).sort((a, b) => (words.every(w => b.l.includes(w)) - words.every(w => a.l.includes(w)))).slice(0, 25);
+  const s = $('#sug');
+  s.innerHTML = sugList.length ? sugList.map((x, i) => `<button type="button" role="option" data-i="${i}"><b>${fmtNcm(x.c)}</b>${esc(x.d)}<small>${esc(x.p)}</small></button>`).join('') : '<p class="note" style="padding:10px 12px;margin:0">Nada encontrado. Tente outra palavra.</p>';
+  s.style.display = 'block'; sugIdx = -1;
+}
+
+$('#q').addEventListener('input', e => suggest(e.target.value));
+$('#q').addEventListener('keydown', e => {
+  const btns = [...$('#sug').querySelectorAll('button')];
+  if (!btns.length || $('#sug').style.display === 'none') return;
+  if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+    e.preventDefault(); sugIdx = (sugIdx + (e.key === 'ArrowDown' ? 1 : -1) + btns.length) % btns.length;
+    btns.forEach((b, i) => b.classList.toggle('on', i === sugIdx)); btns[sugIdx].scrollIntoView({block: 'nearest'});
+  } else if (e.key === 'Escape') hideSug();
+  else if (e.key === 'Enter' && sugIdx >= 0) { e.preventDefault(); go(sugList[sugIdx].c); }
+});
+$('#sug').addEventListener('click', e => { const b = e.target.closest('button'); if (b) go(sugList[+b.dataset.i].c); });
+document.addEventListener('click', e => { if (!e.target.closest('.search')) hideSug(); });
+$('#f').addEventListener('submit', e => {
+  e.preventDefault(); const v = $('#q').value.trim();
+  if (/^[\d.\s-]+$/.test(v)) go(v);
+  else if (sugList.length) go(sugList[0].c);
+  else suggest(v);
+});
+$('#chips').addEventListener('click', e => { const b = e.target.closest('.chip'); if (b) go(b.dataset.c); });
+$('#res').addEventListener('click', e => {
+  const a = e.target.closest('[data-ano]'); if (a) { st.ano = +a.dataset.ano; save(); render(); return; }
+  if (e.target.closest('#cp')) {
+    const btn = $('#cp');
+    navigator.clipboard.writeText($('#xml').textContent).then(() => { btn.textContent = 'Copiado'; }, () => { btn.textContent = 'Selecione e copie'; });
+    return;
+  }
+  if (e.target.closest('summary,details,a')) return;
+  const r = e.target.closest('#tbl tr[data-c]'); if (r) { st.sel = r.dataset.c || '__none'; render(); }
+});
+$('#res').addEventListener('keydown', e => { const r = e.target.closest('#tbl tr[data-c]'); if (r && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); st.sel = r.dataset.c || '__none'; render(); } });
+$('#res').addEventListener('change', e => {
+  if (e.target.id === 'b') { const v = parseFloat(e.target.value.replace(/\./g, '').replace(',', '.')); if (v >= 0) { st.base = v; save(); } render(); }
+});
+window.addEventListener('hashchange', () => { const m = location.hash.match(/^#ncm-(\d{8})$/); if (m && m[1] !== st.code) go(m[1], false); });
+
+fetch('data.json').then(r => r.json()).then(d => {
+  D = d;
+  for (const [c, desc] of D.ncm) NCM.set(c, desc);
+  IDX = D.ncm.map(([c, desc]) => {
+    const p = path(c).map(x => x[1]); const dd = strip(desc);
+    return {c, d: dd, p: p.slice(-2).join(' › '), l: norm(dd + ' ' + (p[p.length - 1] || '')), t: norm(c + ' ' + p.join(' ') + ' ' + dd)};
+  });
+  $('#ver').innerHTML = `Regras de IBS/CBS: Calculadora oficial da Receita (módulo offline V0059) e tabela cClassTrib do IT 2025.002 v1.60, conhecidas em ${esc(D.versoes.regrasData)}, via pacote aberto @sinete/ibs-cbs-dados.<br>NCM: tabela do Siscomex, ${esc(D.versoes.ncm)}. Hierarquia de capítulos e posições: ${esc(D.versoes.hier)}.`;
+  const m = location.hash.match(/^#ncm-(\d{8})$/);
+  go(m ? m[1] : '10063021', !!m);
+}).catch(() => { $('#res').innerHTML = '<div class="card err">Não consegui carregar as tabelas. Recarregue a página.</div>'; });
+}
+</script>
+</body>
+</html>
